@@ -40,7 +40,7 @@ int main(int argc, char* argv[]) {
             exit(1);
         }
     }
-    char * que="L1";
+    char * que="lastFM_A1";
     if(cmdOptionExists(argv, argv+argc, "--query"))
         que = getCmdOption(argv, argv + argc, "--query");
     
@@ -218,7 +218,7 @@ void runJobQuery(string query, string database, string outAdd,int generationMode
         
 
     }
-    else if(query=="L1"){
+    else if(query=="lastFM_A1"){
         pgm.graph.resize(3);
         pgm.deletionOrder={};
         pgm.eliminationOrder={{1,{"userID"}},{2,{"userID1"}} ,{0,{"weight"}} ,{3,{"weight1"}}  }; 
@@ -239,7 +239,7 @@ void runJobQuery(string query, string database, string outAdd,int generationMode
         
 
     }
-    else if(query=="L11"){
+    else if(query=="lastFM_A2"){
         pgm.graph.resize(4);
         pgm.deletionOrder={{0,"userID1"}};
         pgm.eliminationOrder={{2,{"userID"}},{3,{"userID2"}} ,{0,{"weight"}},{1,{"weight2"}}   }; 
@@ -360,7 +360,7 @@ void runJobQuery(string query, string database, string outAdd,int generationMode
         pgm.graph[2].cliqueQueryCSV(database+"ut3.csv", {"userID3","artistID3"}, pgm.eliminationOrder, pgm.deletionOrder,{"userID3"},shallIcleanRawData );
     }
     
-    else if(query=="L222"){
+    else if(query=="lastFM_B"){
         pgm.graph.resize(4);
         pgm.deletionOrder={{0,"userID1"}};
         pgm.eliminationOrder={{3,{"userID"}},{2,{"userID2"}},{1,{"artistID2"}},{0,{"artistID"}}  }; 
@@ -518,7 +518,7 @@ void runJobQuery(string query, string database, string outAdd,int generationMode
         
     }
     
-    else if(query=="q25"){
+    else if(query=="JOB_D"){
         pgm.graph.resize(9);
         pgm.deletionOrder={{2,"info_type_id1"},{1,"info_type_id"},{0,"keyword_id"},{3,"person_id"}};
         pgm.eliminationOrder={{4,{"title"}}, {1,{"name"}}, {0,{"info1"}}, {3,{"movie_id"}}, {2,{"info"}}}; 
@@ -565,7 +565,7 @@ void runJobQuery(string query, string database, string outAdd,int generationMode
         
     }
 //    
-    else if(query=="q18"){
+    else if(query=="JOB_C"){
         pgm.graph.resize(7);
         pgm.deletionOrder={{2,"info_type_id"},{1,"info_type_id1"},{0,"person_id"}};
         pgm.eliminationOrder={{1,{"title"}}, {3,{"info"}}, {0,{"info1"}}, {2,{"movie_id"}}}; 
@@ -627,7 +627,7 @@ void runJobQuery(string query, string database, string outAdd,int generationMode
         pgm.graph[4].cliqueQueryCSV(database+"title.csv", {"movie_id", "title", "production_year"}, pgm.eliminationOrder, pgm.deletionOrder,{"movie_id"} ,shallIcleanRawData);
        
     }
-    else if(query=="q3"){
+    else if(query=="JOB_A"){
         pgm.graph.resize(4);
         pgm.deletionOrder={{1,"keyword_id"},{0,"movie_id"}};
         pgm.eliminationOrder={{0,{"title"}}}; 
@@ -650,7 +650,7 @@ void runJobQuery(string query, string database, string outAdd,int generationMode
         pgm.graph[3].cliqueQueryCSV(database+"title.csv", {"movie_id", "title"}, pgm.eliminationOrder, pgm.deletionOrder,{"movie_id"} ,shallIcleanRawData);
        
     }
-    else if(query=="q15"){
+    else if(query=="JOB_B"){
         pgm.graph.resize(9);
         pgm.deletionOrder={{1,"info_type_id"},{3,"company_id"}, {0,"keyword_id"},{4,{"movie_id"}},{2,{"company_type_id"}}};
         pgm.eliminationOrder={{0,{"title"}},{1,{"info"}}}; 
