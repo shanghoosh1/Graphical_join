@@ -1520,6 +1520,182 @@ void PGM:: eliminate(int srcMaxC,int child_factor_id, int extraBucketId){
 }
 
 
+
+void PGM::eliminateVarsCyclic(){
+
+    for(int maxClq=0; maxClq<eliminationOrder.size();maxClq++){
+        auto start = std::chrono::system_clock::now();
+        auto currVarset=eliminationOrder[maxClq];
+        auto sepSet=seperatorSet[maxClq];
+        string xx;
+        for(auto &x:currVarset)
+            xx+=x+", ";
+        cout<< "The variables ("<<xx<< "):  ";
+        if(currVarset.size()>1){
+            cout<<"More than one variable elimination inside a maxclique for cyclic queries, not implemented yet!"<<endl;
+            exit(1);
+        }
+
+        // find the related cliques
+        auto clqList=findInGraph(currVarset);
+        if(clqList.size()==2){ // A new fill-n edge should be added
+            //find the source of the new fill-in edge based on the elimination order
+            // Reverse elimination order map! given a var, give me the order
+            unordered_map<string,int> elor;
+            for(auto &delo: eliminationOrder)
+                for(auto &sec:delo.second)
+                    elor[sec]=delo.first;
+            
+            
+            if(graph[clqList[0]].otherVars.size()>1 || graph[clqList[1]].otherVars.size()>1){
+                cout<<"More than one variable elimination inside a maxclique for cyclic queries, not implemented yet!"<<endl;
+                exit(1);
+            }
+            string srcVar; string otherVar;
+            int srcInx; int othInx;
+            if(elor[graph[clqList[0]].otherVars[0]]>elor[graph[clqList[1]].otherVars[0]]){
+                srcVar=graph[clqList[1]].otherVars[0];
+                otherVar=graph[clqList[0]].otherVars[0];
+                srcInx=clqList[1]; 
+                othInx=clqList[0];
+            }
+            else{
+                srcVar=graph[clqList[0]].otherVars[0];
+                otherVar=graph[clqList[1]].otherVars[0];
+                srcInx=clqList[0]; 
+                othInx=clqList[1];
+            }
+            
+            //To be a WOJA, we need to find the the sharing values in all the cliques related to srcVar and also otherVAr
+            auto srcClqs=findInGraph({srcVar});
+            auto otherVarClqs=findInGraph({otherVar});
+           
+            
+            if(srcClqs.size()>2 || otherVarClqs.size()>2){
+                cout<<"Set multiplication for all the cliques has not been implemented yet!"<<endl;
+                exit(1);
+            }
+            
+            clique newC;
+            newC.pot_type="T2";
+            newC.conditionedOnVar=srcVar;
+            newC.otherVars.push_back(otherVar);
+            newC.variableList={srcVar,otherVar};
+            graph.push_back(newC);
+            int newClqInd=graph.size()-1;
+            auto targetClq=&graph[newClqInd].cond_pot_T2;
+            
+            //the generative pots 
+            gen_clique newG;
+            newG.conditionedOnVarSet={srcVar,otherVar};
+            newG.otherVars.push_back(currVarset[0]);
+            newG.type="cyc";
+            generativeCliques.push_back(newG);
+            auto gen_target=&generativeCliques[generativeCliques.size()-1].cyc_gen;
+
+        
+            
+            if(srcClqs.size()==2 || otherVarClqs.size()==2){
+                
+                int clqInx1; int clqInx2; // to keep the clique index of other edges related to srcVar and otherVAr
+                if(clqList[0]==srcClqs[0] || clqList[1]==srcClqs[0]) 
+                    clqInx1=srcClqs[1];
+                else 
+                    clqInx1=srcClqs[0];
+                
+                if(clqList[0]==otherVarClqs[0] || clqList[1]==otherVarClqs[0]) 
+                    clqInx2=otherVarClqs[1];
+                else 
+                    clqInx2=otherVarClqs[0];
+                if(clqInx1!=clqInx2 &&(srcVar!= graph[clqInx1].conditionedOnVar || otherVar != graph[clqInx2].conditionedOnVar)){
+                    cout<< "This elimination order for the cyclic query has not been supported yet with the current implementation. Check another elimination order!"<<endl;
+                    exit(1);
+                }
+                if(clqInx1==clqInx2){ // we have a triangle
+                    
+                    auto cI1=&graph[clqInx1].cond_pot_T2;
+                    if (graph[srcInx].cond_pot_T2.size()<graph[othInx].cond_pot_T2.size()){
+                        for(auto &entry:graph[srcInx].cond_pot_T2)
+                            if(graph[othInx].cond_pot_T2.find(entry.first)!=graph[othInx].cond_pot_T2.end())
+                                for(auto &first:entry.second)
+                                    for(auto &sec:graph[othInx].cond_pot_T2[entry.first]){
+                                        // check if these keys exist in the srcVar and otherVAr cliques
+                                        if((*cI1).find(first.first)!=(*cI1).end() && (*cI1)[first.first].find(sec.first)!=(*cI1)[first.first].end()){
+                                            (*targetClq)[first.first][sec.first]+=first.second*sec.second;
+                                            (*gen_target)[{first.first,sec.first}].push_back({entry.first,{first.second*sec.second,1}});
+                                        }
+                                    }
+                    }
+                    else{
+                        for(auto &entry:graph[othInx].cond_pot_T2)
+                            if(graph[srcInx].cond_pot_T2.find(entry.first)!=graph[srcInx].cond_pot_T2.end())
+                                for(auto &first:entry.second)
+                                    for(auto &sec:graph[srcInx].cond_pot_T2[entry.first]){
+                                        if((*cI1).find(first.first)!=(*cI1).end() && (*cI1)[first.first].find(sec.first)!=(*cI1)[first.first].end()){
+                                            (*targetClq)[sec.first][first.first]+=first.second*sec.second* (*cI1)[first.first][sec.first];
+                                            (*gen_target)[{sec.first,first.first}].push_back({entry.first,{first.second*sec.second,1}});
+                                        }
+                                    }
+                    }
+                    
+                    // The front edge is not needed anymore
+                    graph[clqInx1].disabled=true;
+                }
+                else{ // not triangle. We need a new fill-in edge
+                    auto cI1=&graph[clqInx1].cond_pot_T2;
+                    auto cI2=&graph[clqInx2].cond_pot_T2;
+
+                    if (graph[srcInx].cond_pot_T2.size()<graph[othInx].cond_pot_T2.size()){
+                        for(auto &entry:graph[srcInx].cond_pot_T2)
+                            if(graph[othInx].cond_pot_T2.find(entry.first)!=graph[othInx].cond_pot_T2.end())
+                                for(auto &first:entry.second)
+                                    for(auto &sec:graph[othInx].cond_pot_T2[entry.first]){
+                                        // check if these keys exist in the srcVar and otherVAr cliques
+                                        if((*cI1).find(first.first)!=(*cI1).end() && (*cI2).find(sec.first)!=(*cI2).end()){
+                                            (*targetClq)[first.first][sec.first]+=first.second*sec.second;
+                                            (*gen_target)[{first.first,sec.first}].push_back({entry.first,{first.second*sec.second,1}});
+                                        }
+                                    }
+                    }
+                    else{
+                        for(auto &entry:graph[othInx].cond_pot_T2)
+                            if(graph[srcInx].cond_pot_T2.find(entry.first)!=graph[srcInx].cond_pot_T2.end())
+                                for(auto &first:entry.second)
+                                    for(auto &sec:graph[srcInx].cond_pot_T2[entry.first]){
+                                        if((*cI1).find(sec.first)!=(*cI1).end() && (*cI2).find(first.first)!=(*cI2).end()){
+                                            (*targetClq)[sec.first][first.first]+=first.second*sec.second;
+                                            (*gen_target)[{sec.first,first.first}].push_back({entry.first,{first.second*sec.second,1}});
+                                        }
+                                    }
+                    }
+                }
+                
+            }
+            else{
+                // if srcClq and otherVArClqs sizes == 1 or 0
+                cout<<" srcClq and otherVArClqs sizes == 1 or 0, not implemented yet"<<endl;
+                exit(1);
+            }
+            
+            // The current edges are no longer  needed after current node elimination
+            for (auto &c: clqList)
+                graph[c].disabled=true;
+        }
+        else if(clqList.size()==1&& graph[clqList[0]].pot_type=="T2"){ // one edge remains
+            eliminate(clqList[0],-1,-1);
+            graph[clqList[0]].disabled=true;
+            
+        }
+        else if(clqList.size()==1 && graph[clqList[0]].pot_type=="T1"){ // no edge remains
+            eliminate(-1,clqList[0],-1); // print the join size
+        }
+        
+        auto end = std::chrono::system_clock::now();
+        std::chrono::duration<double> elapsed = end - start;
+        std::cout << "Elapsed wall time for eliminating: " << elapsed.count() << "s"<<endl;
+    }
+}
+
 void PGM::generateResults(int mode, string out_add){
 
     // mode=0 =>  just generate the result in mem
@@ -1528,7 +1704,7 @@ void PGM::generateResults(int mode, string out_add){
     // both the modes 1 and 2
     
 //    int root= generativeCliques.size()-1;
-    levelClqs.push_back({-1});  // the root is the las clique in the main graph
+    levelClqs.push_back({-1});  // the root is the last clique in the main graph
     levelParents.push_back({-1});
     
     vector<int> newLevelClq;
@@ -1580,7 +1756,7 @@ void PGM::generateResults(int mode, string out_add){
          recursive_generation_noFreq(0, 1, {}); // generate the data directly with no freq table production
         auto end1 = std::chrono::system_clock::now();
         std::chrono::duration<double> elapsed = end1 - start1;
-        std::cout << "Elapsed wall time for flat join in memory: " << elapsed.count() << "s"<<endl;
+        std::cout << "Elapsed wall time for flat join generation in memory: " << elapsed.count() << "s"<<endl;
         levelFreqs.clear();
         levelFreqs.resize(levelSize+1);
         auto start11 = std::chrono::system_clock::now();
@@ -1593,15 +1769,15 @@ void PGM::generateResults(int mode, string out_add){
         write2Disk_1(out_add);
         auto end2 = std::chrono::system_clock::now();
          elapsed = end2 - start2;
-        std::cout << "Elapsed wall time for writing freqs: " << elapsed.count() << "s"<<endl;
+        std::cout << "Elapsed wall time for writing the summary in disk: " << elapsed.count() << "s"<<endl;
         elapsed= end2-start11;
-        std::cout << "Elapsed wall time for cal summ and write in disk: " << elapsed.count() << "s"<<endl;
+        std::cout << "Elapsed wall time to cal summary and write in disk: " << elapsed.count() << "s"<<endl;
         
         auto start3 = std::chrono::system_clock::now();
         readFromDisk_1(out_add);
         auto end3 = std::chrono::system_clock::now();
         elapsed = end3 - start3;
-        std::cout << "Elapsed wall time for reading the freqs and de-summarization: " << elapsed.count() << "s"<<endl;
+        std::cout << "Elapsed wall time for reading the summary and de-summarizing it: " << elapsed.count() << "s"<<endl;
     }
     else{
         auto start1 = std::chrono::system_clock::now();
@@ -1700,8 +1876,7 @@ void PGM::recursive_generation(short int level, unsigned long long int parentBuc
                 singleClqIndxDel=c;
             else if(graph[c].pot_type== "T1" && graph[c].potFromDeletion==false)
                 singleClqIndxEli=c;
-                
-            
+
         }
         
         if(singleClqIndxDel==-1 && singleClqIndxEli>-1)
@@ -2703,3 +2878,173 @@ void PGM::recursive_generation_noFreq(short int level, unsigned long long int pa
         }
     }
 }
+void PGM::cyc_generate(int mode,  string out_add){
+    auto start = std::chrono::system_clock::now();
+    vector<string> gen_vars;
+    for(int i=eliminationOrder.size()-1; i>=0;i--)
+        gen_vars.push_back(eliminationOrder[i][0]);
+    auto root=&graph[graph.size()-1].pot_T1;
+    auto second=&generativeCliques[generativeCliques.size()-1].cond_pot_T2;
+    auto third=&generativeCliques[generativeCliques.size()-2].cyc_gen;
+    auto fourth=&generativeCliques[generativeCliques.size()-3].cyc_gen;
+    
+    
+    //////////////////////////////////////////// run in memory
+    
+    
+    if(mode==0 || mode==5){
+        vector<int> rootVec, secVec, thirdVec,fourthVec;
+        for (auto &entry1:(*root)){
+            rootVec.assign(entry1.second, entry1.first);
+    //        cout<<"-"<<entry1.first<<", "<< entry1.second<<endl;
+            for(auto &entry2:(*second)[entry1.first]){
+                secVec.assign(entry2.second[0], entry2.first);
+    //            cout<<"----"<<entry2.first<<", "<< entry2.second[0]<<endl;
+                for(auto &entry3:(*third)[{entry2.first,entry1.first}]){
+                    thirdVec.assign(entry3.second[0], entry3.first);
+    //                cout<<"------"<<entry3.first<<", "<< entry3.second[0]<<endl;
+                    for(auto &entry4:(*fourth)[{entry3.first,entry2.first}]){
+                        fourthVec.assign(entry4.second[0], entry4.first);
+    //                    cout<<"---------"<<entry4.first<<", "<< entry4.second[0]<<endl;
+                    }
+                }
+            }
+        }
+    }
+    auto end = std::chrono::system_clock::now();
+    std::chrono::duration<double> elapsed = end - start;
+    std::cout << "\nElapsed wall time for generation in memory: " << elapsed.count() << "s";
+    start = std::chrono::system_clock::now();
+    
+    
+    ////////////////////////////// write in disk
+    
+    if(mode==1 || mode ==5){
+        vector<unsigned long long int> rootVec,secVec, thirdVec,fourthVec;
+        for (auto &entry1:(*root)){
+            rootVec.push_back(entry1.first);
+            rootVec.push_back(entry1.second);
+//            rootVec.assign(entry1.second, entry1.first);
+    //        cout<<"-"<<entry1.first<<", "<< entry1.second<<endl;
+            for(auto &entry2:(*second)[entry1.first]){
+                secVec.push_back(entry2.first);
+                secVec.push_back(entry2.second[0]);
+//                secVec.assign(entry2.second[0], entry2.first);
+    //            cout<<"----"<<entry2.first<<", "<< entry2.second[0]<<endl;
+                for(auto &entry3:(*third)[{entry2.first,entry1.first}]){
+                    thirdVec.push_back(entry3.first);
+                    thirdVec.push_back(entry3.second[0]);
+//                    thirdVec.assign(entry3.second[0], entry3.first);
+    //                cout<<"------"<<entry3.first<<", "<< entry3.second[0]<<endl;
+                    for(auto &entry4:(*fourth)[{entry3.first,entry2.first}]){
+                        fourthVec.push_back(entry4.first);
+                        fourthVec.push_back(entry4.second[0]);
+//                        fourthVec.assign(entry4.second[0], entry4.first);
+    //                    cout<<"---------"<<entry4.first<<", "<< entry4.second[0]<<endl;
+                    }
+                }
+            }
+        }
+        auto it = find(outputVars.begin(), outputVars.end(), gen_vars[0]);
+        if (it != outputVars.end()){
+  
+            string fileName=""+out_add+gen_vars[0];
+            fileName+="_att.txt";
+            ofstream output_file(fileName);
+
+            ostream_iterator<long long int> output_iterator(output_file, "|");
+            copy(rootVec.begin(), rootVec.end(), output_iterator);
+            output_file.close();
+        }
+        it = find(outputVars.begin(), outputVars.end(), gen_vars[1]);
+        if (it != outputVars.end()){
+  
+            string fileName=""+out_add+gen_vars[1];
+            fileName+="_att.txt";
+            ofstream output_file(fileName);
+
+            ostream_iterator<long long int> output_iterator(output_file, "|");
+            copy(secVec.begin(), secVec.end(), output_iterator);
+            output_file.close();
+        }
+        it = find(outputVars.begin(), outputVars.end(), gen_vars[2]);
+        if (it != outputVars.end()){
+  
+            string fileName=""+out_add+gen_vars[2];
+            fileName+="_att.txt";
+            ofstream output_file(fileName);
+
+            ostream_iterator<long long int> output_iterator(output_file, "|");
+            copy(thirdVec.begin(), thirdVec.end(), output_iterator);
+            output_file.close();
+        }
+        it = find(outputVars.begin(), outputVars.end(), gen_vars[3]);
+        if (it != outputVars.end()){
+  
+            string fileName=""+out_add+gen_vars[3];
+            fileName+="_att.txt";
+            ofstream output_file(fileName);
+
+            ostream_iterator<long long int> output_iterator(output_file, "|");
+            copy(fourthVec.begin(), fourthVec.end(), output_iterator);
+            output_file.close();
+        }
+    }
+    end = std::chrono::system_clock::now();
+    elapsed = end - start;
+    std::cout << "\nElapsed wall time for writing the summary in disk: " << elapsed.count() << "s"<<endl;
+    
+    
+    
+    ////////////////////////  read from disk
+    auto startt = std::chrono::system_clock::now();
+    for(auto f:gen_vars){
+      
+        string add=out_add+ f+"_att.txt";
+        std::ifstream file(add);
+        if (!file.good())
+            continue;
+        string line="";
+        getline(file, line);
+        string::const_iterator start = line.begin();
+        string::const_iterator end = line.end();
+        string::const_iterator next = std::find(start, end, '|');
+        int key;
+        unsigned long long int value;
+        while (next != end)
+        {
+            key = stoi(string(start, next));
+            start = next + 1;
+            next = find(start, end, '|');
+            value=stoll(string(start, next));
+            start = next + 1;
+            next = find(start, end, '|');
+
+
+            if(value<max_vec_initialization){
+                vector <int> tmp;
+                tmp.assign(value, key);
+            }
+            else{
+                for(int i=0;i<value / max_vec_initialization;i++){
+                    vector <int> tmp;
+                    tmp.assign(max_vec_initialization, key);
+
+                }
+                vector <int> tmp;
+                tmp.assign(value % max_vec_initialization, key); // remaining
+            }
+
+        }
+   
+    }
+    end = std::chrono::system_clock::now();
+    elapsed = end - startt;
+    cout<< "Loading the summary and de-summarization took "<< elapsed.count() << "s"<<endl;
+}
+
+
+
+
+
+

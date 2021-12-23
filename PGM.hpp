@@ -9,6 +9,7 @@
 #include <algorithm> 
 #include<boost/functional/hash.hpp>
 #include <chrono>
+#include <bits/stdc++.h>
 using namespace std;
 
 
@@ -40,7 +41,7 @@ public:
     string sql;
     vector<vector<string>> rawData;  // from csv files
     unordered_map < int, unordered_map< int, unsigned long long int>> cond_pot_T2;  // x1--> {y1,freq}
-    unordered_map<int,unordered_map_sequence <vector<int>,unsigned long long int>> cond_pot_T3; // x1 --> {{y1,y2}, freq}
+        unordered_map<int,unordered_map_sequence <vector<int>,unsigned long long int>> cond_pot_T3; // x1 --> {{y1,y2}, freq}
     unordered_map<int, unsigned long long int> pot_T1; // {x1,freq}
 
     string pot_type;
@@ -65,15 +66,18 @@ class gen_clique{
 public:
     vector<string> variableList;  // list of all attributes in this clique
     string conditionedOnVar; // the source of the conditional freq table
+    vector<string> conditionedOnVarSet; // for cyclic queries ND COMPOSITE KEYS
     vector<string> otherVars; // other atts in the conditional pot
     string type;
     unordered_map <int, vector<pair<int, vector<unsigned long long int>> > >cond_pot_T2;  // x1--> {y1,{bucket, childFac}}
+    unordered_map_sequence <vector<int>,vector<pair<int, vector<unsigned long long int>> >> cyc_gen;
+    
 };
 
 
 class PGM{
 public:
-
+    bool cyclic_query;
     bool shallICleanOldPots; /// to remove or keep the old pots. clearing pots takes time
     unsigned int max_vec_initialization; /// maximim frequency for a specific distinc value in generation
     vector<clique> graph; // includes all the cliques related to a given query
@@ -81,6 +85,7 @@ public:
     vector<string> outputVars;
     unordered_map<int, string> deletionOrder; // for deleting the vars which are not in the output list -- delete one by one
     unordered_map<int, vector<string>> eliminationOrder; // elimination order for output max cliques
+    unordered_map<int, vector<string>>  seperatorSet;// to be used with cyclic queries
     unordered_map< string,int> deletionOrderRev; // reverse map for deleting the vars which are not in the output list -- delete one by one
     unordered_map<string,int> eliminationOrderRev; // reverse map of elimination order for output max cliques
     vector<vector<int>> levelClqs; //is used in generation process. contains clq ids in each level of the tree
@@ -98,6 +103,7 @@ public:
     void deleteNonOutputVars(); // deletes the non output variables from the graph.
     void eliminateVariables(); // eliminates the vars and prepares the generation tree
     void eliminate(int srcMaxC,int child_factor_id, int extraBucketId);
+    void eliminateVarsCyclic(); // to be used with cyclic queries with separator size >1
     int product_T1_T1(vector <int> clqList);
     int sumProductV1(vector <int> clqList, bool summingOut, int singleClqIndx); //(x->y)  * (x->y) ==>  (y) or (x->y)
     int sumProductV2(int clq1, int clq2, int singleClqIndx); // (x->y)  * (x->z) ==> (y->z) if elimination order of y is smaller
@@ -108,6 +114,7 @@ public:
     void sumProductV6(int clq1, int clq2, int singleClqIndx); // (x->yw)  * (x->yz) ==> (y->wz) if elimination order of y is smaller than elor of z and w
     void sumProductV7 (vector<int> clqIndx, bool summingOut, int singleClqIndx);  // (x->yz) * (x->yz) * (x->yz) ==>  (yz) or (x->yz)
     void generateResults(int mode, string out_add);
+    void cyc_generate(int mode,  string out_add);
  void recursive_generation_noFreq(short int level, unsigned long long int parentBucket, vector<int> keys);
     void recursive_generation(short int level, unsigned long long int parentBucket, vector<int> keys); // traverse the graph and generate columnwise
 //    void recursive_generation_2(short int level, unsigned long long int parentBucket, vector<int> keys, vector<int> row); // traverse the graph and generate row-wise
@@ -117,6 +124,7 @@ public:
     void write2Disk_2(string out_add);  //writes actual data
     void readFromDisk_2(string in_add); // reads actual data
     void generate();
+  
 };
 int findInVector( vector<string>& vecOfElements,  string& element);
 vector<string> vec_substract(vector<string> v1, vector<string> v2);

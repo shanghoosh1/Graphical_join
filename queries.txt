@@ -1,0 +1,38 @@
+JOB-A:
+
+SELECT t.title FROM keyword AS k,movie_info AS mi, movie_keyword AS mk,title AS t WHERE t.id = mi.movie_id AND t.id = mk.movie_id AND mk.movie_id = mi.movie_id AND k.id = mk.keyword_id;
+
+JOB-B:
+
+SELECT mi.info, t.title FROM aka_title AS at, company_name AS cn, company_type AS ct, info_type AS it1, keyword AS k,movie_companies AS mc,movie_info AS mi,movie_keyword AS mk, title AS t WHERE t.id = at.movie_id AND t.id = mi.movie_id AND t.id = mk.movie_id AND t.id = mc.movie_id AND mk.movie_id = mi.movie_id AND mk.movie_id = mc.movie_id AND mk.movie_id = at.movie_id  AND mi.movie_id = mc.movie_id AND mi.movie_id = at.movie_id AND mc.movie_id = at.movie_id AND k.id = mk.keyword_id AND it1.id = mi.info_type_id AND cn.id = mc.company_id AND ct.id = mc.company_type_id;
+
+JOB-C:
+
+SELECT mi.info as i,mi_idx.info as ii, t.title FROM cast_info AS ci, info_type AS it1, info_type AS it2, movie_info AS mi, movie_info_idx AS mi_idx, name AS n, title AS t WHERE t.id = mi.movie_id AND t.id = mi_idx.movie_id AND t.id = ci.movie_id AND ci.movie_id = mi.movie_id AND ci.movie_id = mi_idx.movie_id AND mi.movie_id = mi_idx.movie_id AND n.id = ci.person_id AND it1.id = mi.info_type_id AND it2.id = mi_idx.info_type_id;
+
+JOB-D:
+
+SELECT mi.info , mi_idx.info, n.name , t.title FROM cast_info AS ci, info_type AS it1, info_type AS it2, keyword AS k, movie_info AS mi,  movie_info_idx AS mi_idx, movie_keyword AS mk, name AS n, title AS t WHERE t.id = mi.movie_id AND t.id = mi_idx.movie_id  AND t.id = ci.movie_id AND t.id = mk.movie_id AND ci.movie_id = mi.movie_id  AND ci.movie_id =mi_idx.movie_id AND ci.movie_id = mk.movie_id AND mi.movie_id = mi_idx.movie_id AND mi.movie_id = mk.movie_id AND mi_idx.movie_id = mk.movie_id AND n.person_id = ci.person_id AND it1.id = mi.info_type_id AND it2.id = mi_idx.info_type_id AND k.id = mk.keyword_id;
+
+lastFM-A1:
+
+SELECT ua1.userid as u1,ua1.weight as w1, ua2.userid, ua2.weight from user_artists ua1, user_artists ua2, user_friend uf1  where ua1.userid=uf1.userid  and uf1.friendid=ua2.userid;
+
+lastFM-A2:
+
+SELECT ua1.userid as u1, ua1.weight as w1,ua2.userid, ua2.weight from user_artists ua1, user_artists ua2, user_friend uf1, user_friend uf2 where ua1.userid=uf1.userid and uf1.friendid=uf2.userid and uf2.friendid=ua2.userid;
+
+lastFM-B:
+
+SELECT ut1.artistID, ut1.userID,ut2.userID,ut2.artistId  from usertag ut1, usertag ut2, user_friend uf1, user_friend uf2 where ut1.userID=uf1.userID and uf1.friendId=uf2.userID and uf2.friendId=ut2.userID;
+
+FK-A:
+
+SELECT name,discount from customer, orders,lineitem where customer.custkey=orders.custkey and orders.orderkey=lineitem.orderkey;
+
+FK-B:
+
+SELECT regionkey,supplier.suppkey from customer, orders,lineitem, nation, supplier where customer.custkey=orders.custkey and orders.orderkey=lineitem.orderkey and customer.nationkey=nation.nationkey and lineitem.suppkey=supplier.suppkey;
+
+
+

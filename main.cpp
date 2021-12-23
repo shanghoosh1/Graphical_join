@@ -25,7 +25,7 @@ int main(int argc, char* argv[]) {
   
     
     string outAdd="/media/shani/2TB/output/";
-    string fileAdd="/media/shani/2TB/data/lastFM/dupe_int/";
+    string fileAdd="/media/shani/2TB/data/TPCH/tpch1x/int/";
 //    string fileAdd="/media/shani/2TB/data/JOB/SF1/numeric/withHeaders/";
     if(cmdOptionExists(argv, argv+argc, "--input"))
         fileAdd = getCmdOption(argv, argv + argc, "--input");
@@ -40,7 +40,7 @@ int main(int argc, char* argv[]) {
             exit(1);
         }
     }
-    char * que="lastFM_A1";
+    char * que="tpch_fk2";
     if(cmdOptionExists(argv, argv+argc, "--query"))
         que = getCmdOption(argv, argv + argc, "--query");
     
@@ -85,7 +85,53 @@ void runJobQuery(string query, string database, string outAdd,int generationMode
     const clock_t t1 = clock();
     auto start = std::chrono::system_clock::now(); 
     
-    if(query=="q16"){
+    if(query=="tpch_fk1"){
+        pgm.graph.resize(3);
+        pgm.deletionOrder={{1,"custkey"},{0,"orderkey"}};
+        pgm.eliminationOrder={{1,{"name"}},{0,{"discount"}}}; 
+        pgm.outputVars={"name", "discount"};
+      
+        
+        clique k; // table keyword
+        pgm.graph[0]=k;
+        pgm.graph[0].cliqueQueryCSV(database+"customer.csv", {"custkey","name"}, pgm.eliminationOrder, pgm.deletionOrder,{"custkey"},shallIcleanRawData );
+        clique mk; // table movie keyword
+        pgm.graph[2]=mk;
+        pgm.graph[2].cliqueQueryCSV(database+"orders.csv", {"orderkey","custkey"}, pgm.eliminationOrder, pgm.deletionOrder,{"orderkey","custkey"} ,shallIcleanRawData);
+        
+        clique ci;
+        pgm.graph[1]=ci;
+        pgm.graph[1].cliqueQueryCSV(database+"lineitem.csv", {"orderkey","discount"},pgm.eliminationOrder, pgm.deletionOrder,{"orderkey"},shallIcleanRawData);
+        
+        
+    }
+    else if(query=="tpch_fk2"){
+        pgm.graph.resize(5);
+        pgm.deletionOrder={{1,"custkey"},{2,"orderkey"},{0,"nationkey"}};
+        pgm.eliminationOrder={{1,{"regionkey"}},{0,{"suppkey"}}}; 
+        pgm.outputVars={"regionkey", "suppkey"};
+      
+        
+        clique k; // table keyword
+        pgm.graph[0]=k;
+        pgm.graph[0].cliqueQueryCSV(database+"customer.csv", {"custkey","nationkey"}, pgm.eliminationOrder, pgm.deletionOrder,{"custkey","nationkey"},shallIcleanRawData );
+        clique mk; // table movie keyword
+        pgm.graph[2]=mk;
+        pgm.graph[2].cliqueQueryCSV(database+"orders.csv", {"orderkey","custkey"}, pgm.eliminationOrder, pgm.deletionOrder,{"orderkey","custkey"} ,shallIcleanRawData);
+        
+        clique ci;
+        pgm.graph[1]=ci;
+        pgm.graph[1].cliqueQueryCSV(database+"lineitem.csv", {"orderkey","suppkey"},pgm.eliminationOrder, pgm.deletionOrder,{"orderkey","suppkey"},shallIcleanRawData);
+        
+        clique n;
+        pgm.graph[3]=n;
+        pgm.graph[3].cliqueQueryCSV(database+"nation.csv", {"nationkey","regionkey"},pgm.eliminationOrder, pgm.deletionOrder,{"nationkey","regionkey"},shallIcleanRawData);
+        
+        clique nn;
+        pgm.graph[4]=nn;
+        pgm.graph[4].cliqueQueryCSV(database+"supplier.csv", {"suppkey"},pgm.eliminationOrder, pgm.deletionOrder,{"suppkey"},shallIcleanRawData);
+    }
+    else if(query=="q16"){
         pgm.graph.resize(8);
         pgm.deletionOrder={{0,"company_id"},{2,"person_id"}, {1,"keyword_id"},{3,{"movie_id"}}};
         pgm.eliminationOrder={{0,{"title"}},{1,{"name"}}}; 
@@ -336,12 +382,15 @@ void runJobQuery(string query, string database, string outAdd,int generationMode
         pgm.graph[2]=ut1;
         pgm.graph[2].cliqueQueryCSV(database+"ut1.csv", {"userID1","artistID1"}, pgm.eliminationOrder, pgm.deletionOrder,{"userID1"},shallIcleanRawData );
     }
-    else if(query=="L2222"){
+    else if(query=="lastFM_cyclic"){
+        pgm.cyclic_query=true;
         pgm.graph.resize(5);
-        pgm.deletionOrder={{0,"userID1"},{1,"userID2"}};
-        pgm.eliminationOrder={{3,{"userID"}},{2,{"userID3"}},{1,{"artistID3"}},{0,{"artistID"}}  }; 
-        pgm.outputVars={"userID" ,"userID3","artistID","artistID3"};
+        pgm.deletionOrder={{0,"artistID"}};
+        pgm.eliminationOrder={{0,{"userID"}},{1,{"userID1"}},{3,{"userID2"}},{2,{"userID3"}}};
+        pgm.seperatorSet={{0,{"userID3","userID1"}},{1,{"userID3","userID2"}},{2,{"userID3"}}};
+        pgm.outputVars={"userID" ,"userID3","userID1","userID2"};
        
+
         clique mc; // table movie_company
         pgm.graph[0]=mc;
         pgm.graph[0].cliqueQueryCSV(database+"uf.csv", {"userID","userID1"}, pgm.eliminationOrder, pgm.deletionOrder,{"userID","userID1"},shallIcleanRawData );
@@ -353,11 +402,11 @@ void runJobQuery(string query, string database, string outAdd,int generationMode
         pgm.graph[4].cliqueQueryCSV(database+"uf2.csv", {"userID2","userID3"}, pgm.eliminationOrder, pgm.deletionOrder,{"userID3","userID2"},shallIcleanRawData );
         clique ut; // table movie_company
         pgm.graph[1]=ut;
-        pgm.graph[1].cliqueQueryCSV(database+"ut.csv", {"userID","artistID"}, pgm.eliminationOrder, pgm.deletionOrder,{"userID"},shallIcleanRawData );
+        pgm.graph[1].cliqueQueryCSV(database+"ut.csv", {"userID","artistID"}, pgm.eliminationOrder, pgm.deletionOrder,{"userID","artistID"},shallIcleanRawData );
        
         clique ut1; // table movie_company
         pgm.graph[2]=ut1;
-        pgm.graph[2].cliqueQueryCSV(database+"ut3.csv", {"userID3","artistID3"}, pgm.eliminationOrder, pgm.deletionOrder,{"userID3"},shallIcleanRawData );
+        pgm.graph[2].cliqueQueryCSV(database+"ut3.csv", {"userID3","artistID"}, pgm.eliminationOrder, pgm.deletionOrder,{"userID3","artistID"},shallIcleanRawData );
     }
     
     else if(query=="lastFM_B"){
@@ -715,7 +764,10 @@ void runJobQuery(string query, string database, string outAdd,int generationMode
 //    
     cout<<"\n *******************    Eliminating the output variables, started.    ****************"<<endl;
     start = std::chrono::system_clock::now();
-    pgm.eliminateVariables();
+    if(!pgm.cyclic_query)
+        pgm.eliminateVariables();
+    else
+        pgm.eliminateVarsCyclic();
     end = std::chrono::system_clock::now();
     elapsed = end - start;
     std::cout << "\nElapsed wall time for Eliminating the output variables: " << elapsed.count() << "s";
@@ -728,7 +780,10 @@ void runJobQuery(string query, string database, string outAdd,int generationMode
 
     cout<<"\n*******************    Generation, started.    ****************"<<endl;
     start = std::chrono::system_clock::now();
-    pgm.generateResults(generationMode, outAdd);
+    if(!pgm.cyclic_query)
+        pgm.generateResults(generationMode, outAdd);
+    else
+        pgm.cyc_generate(generationMode, outAdd);
     end = std::chrono::system_clock::now();
     elapsed = end - start;
     std::cout << "\nElapsed wall time for all generations: " << elapsed.count() << "s";
