@@ -41,9 +41,12 @@ public:
     string sql;
     vector<vector<string>> rawData;  // from csv files
     unordered_map < int, unordered_map< int, unsigned long long int>> cond_pot_T2;  // x1--> {y1,freq}
-        unordered_map<int,unordered_map_sequence <vector<int>,unsigned long long int>> cond_pot_T3; // x1 --> {{y1,y2}, freq}
+    unordered_map<int,unordered_map_sequence <vector<int>,unsigned long long int>> cond_pot_T3; // x1 --> {{y1,y2}, freq}
     unordered_map<int, unsigned long long int> pot_T1; // {x1,freq}
-
+    unordered_set <int>  set_pot_T11; // no frequency
+    unordered_map < int, int> cond_T22;
+    
+    
     string pot_type;
     bool potFromDeletion;
     string dbName, user, pass;
@@ -52,6 +55,7 @@ public:
     void cliqueQueryDB( string table, vector<string> groupingAtts, vector<vector<string>> equalityAtts, vector<vector<string>> likeAtts);
     
     void cliqueQueryCSV( string tableADD, vector<string> groupingAtts, unordered_map<int, vector<string>> eliminationOrder, unordered_map<int, string> deletionOrder, vector<string> JAs, bool shallIcleanRawData); // read data and calculate all the pots based on the elimination and deletion order
+    void FK_cliqueQueryCSV(bool key, string tableADD, vector<string> groupingAtts, unordered_map<int, vector<string>> eliminationOrder, unordered_map<int, string> deletionOrder, vector<string> JAs, bool shallIcleanRawData); // read data and calculate all the pots based on the elimination and deletion order
     
     void makePotFromRawPot(string conditionedOn, vector<string> otherAtts); // using struct in values
  

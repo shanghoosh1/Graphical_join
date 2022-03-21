@@ -2394,7 +2394,69 @@ void PGM::generate(){
         }
 
     } 
+} 
+void clique::FK_cliqueQueryCSV( bool key, string tableADD, vector<string> groupingAtts, unordered_map<int, vector<string>> eliminationOrder, unordered_map<int, string> deletionOrder, vector<string> JAs, bool shallIcleanRawData){
+    variableList=groupingAtts;
+    loadRawData(tableADD,variableList, rawData, '|');
+    if(variableList.size()==1){
+        pot_type="T11"; // no frequency, all are 1s
+        conditionedOnVar=variableList[0];
+        for (auto &row : rawData)
+            set_pot_T11.insert(stoi(row[0])); 
+
+    }
+    else{
+        
+        unordered_map<string,int> elor;
+        for(auto &delo: deletionOrder)
+            elor[delo.second]=delo.first;
+        for(auto &delo: eliminationOrder)
+            for(auto &sec:delo.second)
+                elor[sec]=delo.first+deletionOrder.size();
+        
+        if(variableList.size()==2 && key){
+            pot_type="T22"; // no frequency, all are 1s
+          
+            if(elor[variableList[0]]<elor[variableList[1]]){
+                conditionedOnVar=variableList[0];
+                otherVars.push_back(variableList[1]);
+       
+                for (auto & row : rawData)
+                     cond_T22[stoi(row[0])]=stoi(row[1]);
+
+            }
+            else if(elor[variableList[0]]>elor[variableList[1]]){
+                conditionedOnVar=variableList[1];
+                otherVars.push_back(variableList[0]);
+             
+                for (auto & row : rawData)
+                    cond_T22[stoi(row[1])]=stoi(row[0]);
+  
+            }     
+        }
+        else if(variableList.size()==2 && !key){
+            pot_type="T2";
+          
+            if(elor[variableList[0]]<elor[variableList[1]]){
+                conditionedOnVar=variableList[0];
+                otherVars.push_back(variableList[1]);
+  
+                    for (auto & row : rawData)
+                         cond_pot_T2[stoi(row[0])][stoi(row[1])] += 1;
+
+            }
+            else if(elor[variableList[0]]>elor[variableList[1]]){
+                conditionedOnVar=variableList[1];
+                otherVars.push_back(variableList[0]);
+  
+                    for (auto & row : rawData)
+                        cond_pot_T2[stoi(row[1])][stoi(row[0])] += 1;
+
+            }     
+        }
+    }
 }
+
 
 void clique::cliqueQueryCSV( string tableADD, vector<string> groupingAtts, unordered_map<int, vector<string>> eliminationOrder, unordered_map<int, string> deletionOrder, vector<string> JAs, bool shallIcleanRawData){
     

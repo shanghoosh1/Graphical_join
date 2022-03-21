@@ -24,8 +24,8 @@ void runJobQuery(string query, string database, string outAdd,int generationMode
 int main(int argc, char* argv[]) {
   
     
-    string outAdd="/media/shani/2TB/output/";
-    string fileAdd="/media/shani/2TB/data/TPCH/tpch1x/int/";
+    string outAdd="/media/ali/2TB/output/";
+    string fileAdd="/media/ali/2TB/data/lastFM/projected/";
 //    string fileAdd="/media/shani/2TB/data/JOB/SF1/numeric/withHeaders/";
     if(cmdOptionExists(argv, argv+argc, "--input"))
         fileAdd = getCmdOption(argv, argv + argc, "--input");
@@ -40,7 +40,7 @@ int main(int argc, char* argv[]) {
             exit(1);
         }
     }
-    char * que="tpch_fk2";
+    char * que="lastFM_A1";
     if(cmdOptionExists(argv, argv+argc, "--query"))
         que = getCmdOption(argv, argv + argc, "--query");
     
@@ -102,6 +102,26 @@ void runJobQuery(string query, string database, string outAdd,int generationMode
         clique ci;
         pgm.graph[1]=ci;
         pgm.graph[1].cliqueQueryCSV(database+"lineitem.csv", {"orderkey","discount"},pgm.eliminationOrder, pgm.deletionOrder,{"orderkey"},shallIcleanRawData);
+        
+        
+    }
+    else if(query=="tpch_fk1_new"){  // no frequencies for keys. All are 1s
+        pgm.graph.resize(3);
+        pgm.deletionOrder={{1,"custkey"},{0,"orderkey"}};
+        pgm.eliminationOrder={{1,{"name"}},{0,{"discount"}}}; 
+        pgm.outputVars={"name", "discount"};
+      
+        
+        clique k; // table keyword
+        pgm.graph[0]=k;
+        pgm.graph[0].FK_cliqueQueryCSV(1,database+"customer.csv", {"custkey","name"}, pgm.eliminationOrder, pgm.deletionOrder,{"custkey"},shallIcleanRawData );
+        clique mk; // table movie keyword
+        pgm.graph[2]=mk;
+        pgm.graph[2].FK_cliqueQueryCSV(1,database+"orders.csv", {"orderkey","custkey"}, pgm.eliminationOrder, pgm.deletionOrder,{"orderkey","custkey"} ,shallIcleanRawData);
+        
+        clique ci;
+        pgm.graph[1]=ci;
+        pgm.graph[1].FK_cliqueQueryCSV(0,database+"lineitem.csv", {"orderkey","discount"},pgm.eliminationOrder, pgm.deletionOrder,{"orderkey"},shallIcleanRawData);
         
         
     }
