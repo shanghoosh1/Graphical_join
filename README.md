@@ -26,7 +26,7 @@ The main arguments are as follows:
 The results are as below. We compare our GJ algorithm against PSQL, MonetDB, and Umbra.
 For more info, please refer to our Graphical Join paper, "To Be Available Soon".  
 
-<img src="Results/all.png" width="1000"/>  
+<img src="Results/all1.png" width="1000"/>  
 
 To see the effect of the two sources of inefficiency with joins (unneeded intermediate join result and redundancy),  have a look at the below figures for lastFM-A1, lastFM-A1-dup and lastFM-A2 queries. lastFM-A1 has less unneeded intermediate result and less redundancy, while lastFM-A1-dup contains more redundancy and the lastFM-A2 query has more unneeded intermediate results. The Y-axis is the running time in seconds. The storage cost is in MBs. The results show that GJ is not affected by unneeded intermediate result and the redundancy in the join result.
 
