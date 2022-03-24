@@ -1,4 +1,4 @@
-# Graphical_join
+## Graphical_join
 A new efficient and scalable physical join algorithm on relational data.   
 The algorithm is considered as a worst-case optimal join algorithm.  
 
@@ -22,7 +22,7 @@ The main arguments are as follows:
 # An example: 
 ./graphicaljoin --input /path2integerCSVs/ --output ./output/ --query JOB_A --gen_mode 5 --max_init 200000000  
 
-# Results
+## Results
 The results are as below. We compare our GJ algorithm against PSQL, MonetDB, and Umbra.
 For more info, please refer to our Graphical Join paper, "To Be Available Soon".  
 
@@ -33,14 +33,14 @@ To see the effect of the two sources of inefficiency with joins (unneeded interm
 <img src="Results/disk.png" width="400"/><img src="Results/mem.png" width="400"/>
 <img src="Results/loading.png" width="400"/><img src="Results/space.png" width="400"/>  
 
-Although GJ aims to join the tables and store/restore the result to/from a disk, GJ can also do aggregations over join result without generating the join result. One of the competitors for aggregations is FDB (factorized databases) from https://fdbresearch.github.io/. FDB does not store/restore the join result and it does not generate the flat join result. The authors say they can enumerate the join result, but there is no implementation for that.   
+
+## FDB vs. GJ:  
+Although GJ aims to join the tables and store/restore the result to/from a disk, GJ can also do aggregations over join result without generating the join result. One of the competitors for aggregations is FDB (factorized databases) from https://fdbresearch.github.io/. 
 
 The below results are for FDB and GJ to calculate the count aggregation over joins with different scaling factors of lastFM data. The figures show that by increasing the scaling factor, GJ gains better performance as FDB works with the factorized data, but not factorized distributions. FDB needs to scan the related data to calculate the aggregation.
 
 <img src="Results/A1-agg.png" width="400"/><img src="Results/A2-agg.png" width="400"/>
 
-
-## The reasons why we do  not compare against FDB in our GJ paper:  
 None of the factorized join works is a physical join algorithm - they are NOT designed or meant to do generate the join results.  
 There is no code/implementation available for using them as a physical join operator to compare against.  
 There is only a high-level description of an ‘enumeration’ algorithm that produces the join result of FDB.  
@@ -48,13 +48,15 @@ FDB is for only in-memory joins. There is no available implementation and no alg
 
 GJ can do anything that FDB can do, but the opposite is not true:  
 
-1. FDB does NOT support ad hoc join queries with projections - FDB's factorization would need to include ALL join attributes in the factorized representation.  
+1. FDB does NOT support ad hoc join queries with projections - FDB's factorization would need to include ALL join attributes in the factorized representation, but GJ has the early projection algorithms for this.  
 2. FDB cannot be used to generate uniform random samples of join results, while GJ can use the factorized distribution to generate the uniform sample of the join result without any extra cost.  
-3. FDB cannot be used to produce a Run-Length Encoding (RLE) of join result which is important on its own.
+3. FDB cannot be used to produce a Run-Length Encoding (RLE) of join result which is important on its own, while GJ does this perfectly.
 
 # FDB's Enumeration Algorithm
 
 The enumeration algorithm of the FDB could be similar to our algorithm presented in our graphical join paper, but with the difference that GJ can generate the results in a columnar way as it has the frequencies in advance, but FDB must enumerate the result tuples row-oriented. The below results are for GJ columnar generation and GJ row-oriented generation (The second one can approximately reflect the FDB's enumeration performance). The figures show the GJ is better in tuple enumeration as well.
 
 <img src="Results/A1-Gen.png" width="400"/><img src="Results/A2-Gen.png" width="400"/>
+
+We provided these results just to have an intuition about the differences between FDB and GJ. Unfortunately, in addition to the unavailability of code for enumerating, storing, and loading the join result from factorized data, their available code does not calculate the aggregations correctly for the count queries, #making it impossible to compare against.
 
