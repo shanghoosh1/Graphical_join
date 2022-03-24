@@ -58,5 +58,5 @@ The enumeration algorithm of the FDB could be similar to our algorithm presented
 
 <img src="Results/A1-Gen.png" width="400"/><img src="Results/A2-Gen.png" width="400"/>
 
-We provided these results just to have an intuition about the differences between FDB and GJ. Unfortunately, in addition to the unavailability of code for enumerating, storing, and loading the join result from factorized data, their available code does not calculate the aggregations correctly for the count queries, #making it impossible to compare against.
+We provided these results just to have an intuition about the differences between FDB and GJ. Unfortunately, in addition to the unavailability of code for enumerating, storing, and loading the join result from factorized data, their available code does not calculate the aggregations correctly for the count queries, **making it impossible to compare against**.
 
