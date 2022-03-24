@@ -28,18 +28,33 @@ For more info, please refer to our Graphical Join paper, "To Be Available Soon".
 
 <img src="Results/all1.png" width="1000"/>  
 
-To see the effect of the two sources of inefficiency with joins (unneeded intermediate join result and redundancy),  have a look at the below figures for lastFM-A1, lastFM-A1-dup and lastFM-A2 queries. lastFM-A1 has less unneeded intermediate result and less redundancy, while lastFM-A1-dup contains more redundancy and the lastFM-A2 query has more unneeded intermediate results. The Y-axis is the running time in seconds. The storage cost is in MBs. The results show that GJ is not affected by unneeded intermediate result and the redundancy in the join result.
+To see the effect of the two sources of inefficiency with joins (unneeded intermediate join result and redundancy),  have a look at the below figures for lastFM-A1, lastFM-A1-dup and lastFM-A2 queries. lastFM-A1 has less unneeded intermediate result and less redundancy, while lastFM-A1-dup contains more redundancy and the lastFM-A2 query has more unneeded intermediate results. The Y-axis is the running time in seconds. The storage cost is in MBs. The results show that GJ is not affected by the unneeded intermediate result and the redundancy in the join result.
 
 <img src="Results/disk.png" width="400"/><img src="Results/mem.png" width="400"/>
 <img src="Results/loading.png" width="400"/><img src="Results/space.png" width="400"/>  
 
-Although we aim to introduce an algorithm to join the tables and store/restore the result to/from a disk, we can also do aggregations over join result. One of the competitors for aggregations is FDB (factorized databases) from https://fdbresearch.github.io/. FDB does not store-restore the join result and it does not generate the flat join result. The authors say they can enumerate the join result, but there is no implementation for that.   
+Although GJ aims to join the tables and store/restore the result to/from a disk, GJ can also do aggregations over join result without generating the join result. One of the competitors for aggregations is FDB (factorized databases) from https://fdbresearch.github.io/. FDB does not store/restore the join result and it does not generate the flat join result. The authors say they can enumerate the join result, but there is no implementation for that.   
 
-The below results are for FDB and GJ to calculate the count aggregation over joins with different scaling factors of lastFM data. The figures show that by increasing the scaling factor, GJ gains better performance as FDB works with the factorized data, but not factorized distributions.
+The below results are for FDB and GJ to calculate the count aggregation over joins with different scaling factors of lastFM data. The figures show that by increasing the scaling factor, GJ gains better performance as FDB works with the factorized data, but not factorized distributions. FDB needs to scan the related data to calculate the aggregation.
 
 <img src="Results/A1-agg.png" width="400"/><img src="Results/A2-agg.png" width="400"/>
 
-The enumeration algorithm of the FDB could be similar to our algorithm presented in our graphical join paper, but with the difference that GJ can generate the result columnar as it has the frequencies in advance, but FDB must enumerate the result tuples row-oriented. The below results are for GJ columnar generation and GJ row-oriented generation (The second one can approximately reflect the FDB's enumeration performance). The figures show the GJ is better in tuple enumeration as well.
+
+## The reasons why we do  not compare against FDB in our GJ paper:  
+None of the factorized join works is a physical join algorithm - they are NOT designed or meant to do generate the join results.  
+There is no code/implementation available for using them as a physical join operator to compare against.  
+There is only a high-level description of an ‘enumeration’ algorithm that produces the join result of FDB.  
+FDB is for only in-memory joins. There is no available implementation and no algorithmic discussion about how to store the factorized join representations to disk and retrieve them back.  
+
+GJ can do anything that FDB can do, but the opposite is not true:  
+
+1. FDB does NOT support ad hoc join queries with projections - FDB's factorization would need to include ALL join attributes in the factorized representation.  
+2. FDB cannot be used to generate uniform random samples of join results, while GJ can use the factorized distribution to generate the uniform sample of the join result without any extra cost.  
+3. FDB cannot be used to produce a Run-Length Encoding (RLE) of join result which is important on its own.
+
+# FDB's Enumeration Algorithm
+
+The enumeration algorithm of the FDB could be similar to our algorithm presented in our graphical join paper, but with the difference that GJ can generate the results in a columnar way as it has the frequencies in advance, but FDB must enumerate the result tuples row-oriented. The below results are for GJ columnar generation and GJ row-oriented generation (The second one can approximately reflect the FDB's enumeration performance). The figures show the GJ is better in tuple enumeration as well.
 
 <img src="Results/A1-Gen.png" width="400"/><img src="Results/A2-Gen.png" width="400"/>
 
