@@ -26,6 +26,9 @@ lastFM-B:
 
 SELECT ut1.artistID, ut1.userID,ut2.userID,ut2.artistId  from usertag ut1, usertag ut2, user_friend uf1, user_friend uf2 where ut1.userID=uf1.userID and uf1.friendId=uf2.userID and uf2.friendId=ut2.userID;
 
+lastFM\_cyc:
+SELECT uf1.userID, uf1.friendId as f, uf2.friendId as f1, uf3.friendId as f2  FROM usertag ut1, usertag ut2, user_friend uf1, user_friend uf2, user_friend uf3 WHERE ut1.userID=uf1.userID AND uf1.friendId=uf2.userID AND uf2.friendId=uf3.userID AND uf3.friendId=ut2.userID AND ut1.artistID=ut2.artistID; 
+
 FK-A:
 
 SELECT name,discount from customer, orders,lineitem where customer.custkey=orders.custkey and orders.orderkey=lineitem.orderkey;
